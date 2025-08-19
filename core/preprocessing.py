@@ -39,11 +39,31 @@ def encode(df: pd.DataFrame, encoder_type: str='onehot', target: str|None=None):
         raise ValueError(f'Unknown encoder: {encoder_type}')
     return df, enc
 
-def scale(df: pd.DataFrame, scaler_name: str='standard'):
+def scale(df: pd.DataFrame, scaler_name: str = 'standard'):
+    import numpy as np
     df = df.copy()
-    num_cols = df.select_dtypes(include=['number']).columns
+
+    # numeric columns only
+    num_cols = df.select_dtypes(include=['number']).columns.tolist()
+    if not num_cols:  # nothing to scale
+        return df, None
+
+    # coerce suspicious values to numeric, handle infs/nans
+    X = df[num_cols].apply(pd.to_numeric, errors='coerce')
+    X = X.replace([np.inf, -np.inf], np.nan)
+
+    # keep columns that have at least one non-NaN value
+    keep = [c for c in X.columns if X[c].notna().any()]
+    if not keep:  # all became NaN -> skip scaling
+        return df, None
+
     scaler = select_scaler(scaler_name)
-    df[num_cols] = scaler.fit_transform(df[num_cols])
+
+    # simple policy: fill remaining NaNs with 0 before scaling
+    X_scaled = scaler.fit_transform(X[keep].fillna(0))
+
+    # write back
+    df[keep] = X_scaled
     return df, scaler
 
 def train_test(df: pd.DataFrame, target: str|None=None, test_size: float=0.2, random_state: int=42):
