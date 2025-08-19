@@ -1,0 +1,20 @@
+# Global config for cleaning & preprocessing
+cleaning:
+  drop_duplicates: true
+  strip_whitespace: true
+  standardize_colnames: true
+  datetime_infer: true
+  missing:
+    strategy_numeric: "median"   # mean | median | zero
+    strategy_categorical: "most_frequent"  # most_frequent | constant
+    fill_constant: "missing"
+
+preprocessing:
+  encode_categoricals: true
+  encoder: "onehot"  # onehot | target | ordinal
+  scale_numeric: true
+  scaler: "standard"  # standard | minmax | robust
+
+qa:
+  llm_enabled: false
+  provider: "openai"  # or gemini
